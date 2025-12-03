@@ -1,6 +1,9 @@
 package ru.yandex.practicum;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.io.*;
 
 /*
 этот класс содержит в себе список слов List<String>
@@ -11,4 +14,7 @@ public class WordleDictionary {
 
     private List<String> words;
 
+    public WordleDictionary(List<String> words) {
+        this.words = words;
+    }
 }
