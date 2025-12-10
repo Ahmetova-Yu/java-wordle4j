@@ -5,25 +5,26 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-/*
-этот класс содержит в себе всю рутину по работе с файлами словарей и с кодировками
-    ему нужны методы по загрузке списка слов из файла по имени файла
-    на выходе должен быть класс WordleDictionary
- */
-
 public class WordleDictionaryLoader {
-    private String filename;
 
-    public WordleDictionaryLoader() throws IOException {
-        this("words_ru.txt");
+    private String filename;
+    private PrintWriter logFile;
+
+    public WordleDictionaryLoader(PrintWriter logFile) throws IOException {
+        this("words_ru.txt", logFile);
     }
 
-    public WordleDictionaryLoader(String filename) {
+    public WordleDictionaryLoader(String filename, PrintWriter logFile) {
         this.filename = filename;
+        this.logFile = logFile;
     }
 
     public WordleDictionary loadDictionary() throws IOException {
         List<String> words = readWordsFromFile();
+
+        logFile.println("Файл '" + filename + "' считан");
+        logFile.flush();
+
         return new WordleDictionary(words);
     }
 

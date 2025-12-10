@@ -1,18 +1,7 @@
 package ru.yandex.practicum;
+
+import java.io.PrintWriter;
 import java.util.*;
-
-/*
-в этом классе хранится словарь и состояние игры
-    текущий шаг
-    всё что пользователь вводил
-    правильный ответ
-
-в этом классе нужны методы, которые
-    проанализируют совпадение слова с ответом
-    предложат слово-подсказку с учётом всего, что вводил пользователь ранее
-
-не забудьте про специальные типы исключений для игровых и неигровых ошибок
- */
 
 public class WordleGame {
 
@@ -22,23 +11,30 @@ public class WordleGame {
     private List<String> resultsPlay;
     private boolean isWin;
     private String secretWord;
+    private PrintWriter logFile;
 
-    public WordleGame(WordleDictionary dictionary) {
+    public WordleGame(WordleDictionary dictionary, PrintWriter logFile) {
         this.dictionary = dictionary;
         this.secretWord = dictionary.getRandomWord();
         steps = 6;
 
         this.playerWords = new ArrayList<>();
         this.resultsPlay = new ArrayList<>();
+
+        logFile.println("Игра началась. Загаданное слово: " + secretWord);
+        logFile.flush();
     }
 
     public String makeGuess(String playerWord) throws InvalidWordException, GameOverException {
+        logFile.println("Игрок ввел слово: " + playerWord);
 
         if (isGameOver()) {
+            logFile.println("Попытка хода после окончания игры");
             throw new GameOverException("Игра окончена!");
         }
 
         if (!isValidWord(playerWord)) {
+            logFile.println("Слово " + playerWord + " невалидно");
             throw new InvalidWordException("Слово загадано неверно!");
         }
 
@@ -47,6 +43,7 @@ public class WordleGame {
         String pattern = compareWords(playerWord);
         resultsPlay.add(pattern);
 
+        logFile.println("Результат: " + pattern + ". Количество попыток: " + steps);
         return pattern;
     }
 
@@ -115,5 +112,18 @@ public class WordleGame {
 
     public String getSecretWord() {
         return secretWord;
+    }
+
+    public void logGameEnd() {
+        if (isWin) {
+            logFile.println("Игра окончена. Игрок выиграл!");
+        } else if (steps == 0) {
+            logFile.println("Игра окончена. Игрок проиграл.");
+        }
+        logFile.flush();
+    }
+
+    public int getStep() {
+        return steps;
     }
 }
