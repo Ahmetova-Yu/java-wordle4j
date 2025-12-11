@@ -1,9 +1,7 @@
 package ru.yandex.practicum;
 
-import javax.xml.crypto.dsig.spec.XSLTTransformParameterSpec;
 import java.io.PrintWriter;
 import java.util.*;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class WordleGame {
 
@@ -15,34 +13,24 @@ public class WordleGame {
     private String secretWord;
     private PrintWriter logFile;
     private String hint;
-
     private Set<String> useHints = new HashSet<>();
-    private Map<Integer, Character> correctPosition = new HashMap<>();
-    private Map<Integer, Set<Character>> wrongPosition = new HashMap<>();
-    private Set<Character> containsLetterInWord = new HashSet<>();
-    private Set<Character> notContainsLetterInWord = new HashSet<>();
-    private Map<Character, Integer> minLetterCounts = new HashMap<>();
-    private Map<Character, Integer> maxLetterCounts = new HashMap<>();
+
+    private Map<Character, LetterInfo> letterInfo = new HashMap<>();
+    private List<String> possibleWordsCache;
+    private boolean cacheValid = false;
 
     public WordleGame(WordleDictionary dictionary, PrintWriter logFile) {
         this.dictionary = dictionary;
         this.secretWord = dictionary.getRandomWord();
-        steps = 6;
+        this.steps = 6;
+        this.isWin = false;
 
         this.playerWords = new ArrayList<>();
         this.resultsPlay = new ArrayList<>();
         this.logFile = logFile;
-
-        for (int i = 0; i < 5; i++) {
-            wrongPosition.put(i, new HashSet<>());
-        }
-
-        logFile.println("Игра началась. Загаданное слово: " + secretWord);
-        logFile.flush();
     }
 
-    public String makeGuess(String playerWord) throws InvalidWordException, GameOverException {
-        logFile.println("Игрок ввел слово: " + playerWord);
+    public String makeGuess(String playerWord) throws GameOverException, WordNotFoundInDictionary {
 
         if (isGameOver()) {
             logFile.println("Попытка хода после окончания игры");
@@ -51,15 +39,22 @@ public class WordleGame {
 
         if (!isValidWord(playerWord)) {
             logFile.println("Слово " + playerWord + " невалидно");
-            throw new InvalidWordException("Слово загадано неверно!");
+            throw new WordNotFoundInDictionary("Слово загадано неверно!");
         }
 
         steps--;
         playerWords.add(playerWord);
+
         String pattern = compareWords(playerWord);
         resultsPlay.add(pattern);
 
         updateLetterInfo(playerWord, pattern);
+        cacheValid = false;
+
+        if (playerWord.equals(secretWord)) {
+            isWin = true;
+            logFile.println("Игрок выиграл!");
+        }
 
         logFile.println("Результат: " + pattern + ". Количество попыток: " + steps);
         return pattern;
@@ -67,7 +62,7 @@ public class WordleGame {
 
     private String compareWords(String playerWord) {
         if (playerWord.equals(secretWord)) {
-            isWin = true;
+//            isWin = true;
             return "+++++";
         }
 
@@ -105,11 +100,16 @@ public class WordleGame {
         return new String(res);
     }
 
-    private boolean isValidWord(String playerWord) {
-        return playerWord != null
-                && !playerWord.isBlank()
-                && playerWord.length() == 5
-                && dictionary.contains(playerWord);
+    private boolean isValidWord(String playerWord) throws WordNotFoundInDictionary {
+        if (playerWord == null || playerWord.isBlank() || playerWord.length() != 5) {
+            return false;
+        }
+
+        if (!dictionary.contains(playerWord)) {
+            throw new WordNotFoundInDictionary("Загаданное слово '" + playerWord + "' не найдено в словаре");
+        }
+
+        return true;
     }
 
     public boolean isGameOver() {
@@ -132,118 +132,91 @@ public class WordleGame {
         return secretWord;
     }
 
-    public void logGameEnd() {
-        if (isWin) {
-            logFile.println("Игра окончена. Игрок выиграл!");
-        } else if (steps == 0) {
-            logFile.println("Игра окончена. Игрок проиграл.");
-        }
-        logFile.flush();
-    }
+//    public void logGameEnd() {
+//        if (isWin) {
+//            logFile.println("Игра окончена. Игрок выиграл!");
+//        } else if (steps == 0) {
+//            logFile.println("Игра окончена. Игрок проиграл.");
+//        }
+//        logFile.flush();
+//    }
 
     public int getSteps() {
         return steps;
     }
 
     private void updateLetterInfo(String playerWord, String pattern) {
-        Map<Character, Integer> countsLetterSecret = new HashMap<>();
+        Map<Character, Integer> greenYellowCount = new HashMap<>();
 
-        for (int i = 0; i < secretWord.length(); i++) {
+        for (int i = 0; i < 5; i++) {
             char letter = playerWord.charAt(i);
             char symbol = pattern.charAt(i);
 
             if (symbol == '+' || symbol == '^') {
-                countsLetterSecret.put(letter, countsLetterSecret.getOrDefault(letter, 0) + 1);
+                greenYellowCount.put(letter, greenYellowCount.getOrDefault(letter, 0) + 1);
             }
         }
 
-        for (int i = 0; i < secretWord.length(); i++) {
+        for (int i = 0; i < 5; i++) {
             char letter = playerWord.charAt(i);
             char symbol = pattern.charAt(i);
 
+            LetterInfo info = letterInfo.computeIfAbsent(letter, k -> new LetterInfo());
+
             switch (symbol) {
                 case '+':
-                    correctPosition.put(i, letter);
-                    containsLetterInWord.add(letter);
-
-                    for (int j = 0; j < secretWord.length(); j++) {
-                        if (j != i) {
-                            wrongPosition.computeIfAbsent(j, k -> new HashSet<>()).add(letter);
+                    info.correctPositions.add(i);
+                    info.minCount = Math.max(info.minCount, greenYellowCount.get(letter));
+                    for (int pos = 0; pos < 5; pos++) {
+                        if (pos != i) {
+                            info.wrongPositions.add(pos);
                         }
                     }
-
                     break;
 
                 case '^':
-                    containsLetterInWord.add(letter);
-                    wrongPosition.computeIfAbsent(i, k -> new HashSet<>()).add(letter);
-
+                    info.wrongPositions.add(i);
+                    info.minCount = Math.max(info.minCount, greenYellowCount.get(letter));
                     break;
 
                 case '-':
-                    if (countsLetterSecret.containsKey(letter)) {
-                        maxLetterCounts.put(letter, countsLetterSecret.get(letter));
+                    // Если эта буква была '+' или '^' в этом же слове
+                    if (greenYellowCount.containsKey(letter)) {
+                        info.maxCount = Math.min(info.maxCount, greenYellowCount.get(letter));
                     } else {
-                        notContainsLetterInWord.add(letter);
+                        info.maxCount = 0;
                     }
-
                     break;
             }
-        }
-
-        for (Map.Entry<Character, Integer> entry : countsLetterSecret.entrySet()) {
-            char letter = entry.getKey();
-            int k = entry.getValue();
-
-            minLetterCounts.put(letter, Math.max(minLetterCounts.getOrDefault(letter, 0), k));
         }
     }
 
     private boolean wordMatchConditions(String word) {
-        for (Map.Entry<Integer, Character> entry : correctPosition.entrySet()) {
-            int pos = entry.getKey();
-            char exp = entry.getValue();
+        for (Map.Entry<Character, LetterInfo> entry : letterInfo.entrySet()) {
+            char letter = entry.getKey();
+            LetterInfo info = entry.getValue();
 
-            if (word.charAt(pos) != exp) {
-                return false;
+            int count = 0;
+            for (int i = 0; i < 5; i++) {
+                if (word.charAt(i) == letter) {
+                    count++;
+                }
             }
-        }
 
-        // буквы не должно быть в слове
-        for (char letter : notContainsLetterInWord) {
-            if (word.indexOf(letter) != -1) {
-                return false;
-            }
-        }
-
-        // буква должна быть в слове
-        for (char letter : containsLetterInWord) {
-            if (word.indexOf(letter) == -1) {
-                return false;
-            }
-        }
-
-        // проверка позиций для букв ^
-        for (Map.Entry<Integer, Set<Character>> entry : wrongPosition.entrySet()) {
-            int pos = entry.getKey();
-            Set<Character> wrongLetters = entry.getValue();
-
-            if (wrongLetters.contains(word.charAt(pos))) {
-                return false;
-            }
-        }
-
-        for (char letter = 'а'; letter <= 'я'; letter++) {
-            int countInWord = countLetter(word, letter);
-
-            Integer minCount = minLetterCounts.get(letter);
-            if (minCount != null && countInWord < minCount) {
+            if (count < info.minCount || count > info.maxCount) {
                 return false;
             }
 
-            Integer maxCount = maxLetterCounts.get(letter);
-            if (maxCount != null && countInWord > maxCount) {
-                return false;
+            for (int pos : info.correctPositions) {
+                if (word.charAt(pos) != letter) {
+                    return false;
+                }
+            }
+
+            for (int pos : info.wrongPositions) {
+                if (word.charAt(pos) == letter) {
+                    return false;
+                }
             }
         }
 
@@ -262,27 +235,38 @@ public class WordleGame {
     }
 
     public String getHint() {
-        List<String> words = dictionary.getWords();
+        if (!cacheValid || possibleWordsCache == null) {
+            possibleWordsCache = new ArrayList<>();
+            List<String> allWords = dictionary.getWords();
 
-        List<String> possibleWords = new ArrayList<>();
-        for (String word : words) {
-            if (wordMatchConditions(word) && !useHints.contains(word)) {
-                possibleWords.add(word);
+            for (String word : allWords) {
+                if (wordMatchConditions(word) && !useHints.contains(word)) {
+                    possibleWordsCache.add(word);
+                }
             }
+
+            if (possibleWordsCache.isEmpty()) {
+                for (String word : allWords) {
+                    if (wordMatchConditions(word)) {
+                        possibleWordsCache.add(word);
+                    }
+                }
+            }
+
+            cacheValid = true;
         }
 
-        if (possibleWords.isEmpty()) {
-            logFile.println("Нет подсказок");
+        if (possibleWordsCache.isEmpty()) {
+            logFile.println("Нет подходящих слов для подсказки");
             return null;
         }
 
+        // Выбираем случайное слово
         Random random = new Random();
-        String hint = possibleWords.get(random.nextInt(possibleWords.size()));
-
+        String hint = possibleWordsCache.get(random.nextInt(possibleWordsCache.size()));
         useHints.add(hint);
 
-        logFile.println("Использована подсказка: " + hint);
-
+        logFile.println("Дана подсказка: " + hint);
         return hint;
     }
 
