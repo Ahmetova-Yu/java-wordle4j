@@ -29,21 +29,28 @@ public class WordleGame {
         this.playerWords = new ArrayList<>();
         this.resultsPlay = new ArrayList<>();
         this.logFile = logFile;
+
+//        logFile.println("Загаданное слово: " + secretWord);
+//        logFile.flush();
     }
 
     public String makeGuess(String playerWord) throws GameOverException, WordNotFoundInDictionary {
 
         if (isGameOver()) {
             logFile.println("Попытка хода после окончания игры");
+            logFile.flush();
+
             throw new GameOverException("Игра окончена!");
         }
 
         if (!isValidWord(playerWord)) {
             logFile.println("Слово " + playerWord + " невалидно");
+            logFile.flush();
+
             throw new WordNotFoundInDictionary("Слово загадано неверно!");
         }
 
-        steps--;
+//        steps--;
         playerWords.add(playerWord);
 
         String pattern = compareWords(playerWord);
@@ -55,9 +62,15 @@ public class WordleGame {
         if (playerWord.equals(secretWord)) {
             isWin = true;
             logFile.println("Игрок выиграл!");
+            logFile.flush();
+
+        } else {
+            steps--;
         }
 
         logFile.println("Результат: " + pattern + ". Количество попыток: " + steps);
+        logFile.flush();
+
         return pattern;
     }
 
@@ -240,6 +253,8 @@ public class WordleGame {
 
         if (possibleWordsCache.isEmpty()) {
             logFile.println("Нет подходящих слов для подсказки");
+            logFile.flush();
+
             return null;
         }
 
@@ -248,6 +263,8 @@ public class WordleGame {
         useHints.add(hint);
 
         logFile.println("Дана подсказка: " + hint);
+        logFile.flush();
+
         return hint;
     }
 

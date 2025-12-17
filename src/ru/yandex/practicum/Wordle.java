@@ -29,12 +29,16 @@ public class Wordle {
                 sc = new Scanner(System.in, StandardCharsets.UTF_8);
 
                 log.println("Загрузка словаря");
+                log.flush();
+
                 WordleDictionaryLoader loader = new WordleDictionaryLoader(log);
                 WordleDictionary dictionary = loader.loadDictionary();
                 log.println("Словарь загружен. Слов: " + dictionary.getWords().size());
+                log.flush();
 
                 game = new WordleGame(dictionary, log);
                 log.println("Игра создана. Загаданное слово: " + game.getSecretWord());
+                log.flush();
 
                 System.out.println("Игра началась!");
 
@@ -46,6 +50,8 @@ public class Wordle {
 
                     if (normalizeWord.isEmpty()) {
                         log.println("Игрок запросил подсказку");
+                        log.flush();
+
                         String hint = game.getHint();
                         if (hint != null) {
                             System.out.println("Подсказка: " + hint);
@@ -58,11 +64,15 @@ public class Wordle {
                     if (!isValid(normalizeWord)) {
                         System.out.println("Слово должно быть из 5 русских букв");
                         log.println("Некорректный ввод: " + word);
+                        log.flush();
+
                         continue;
                     }
 
                     try {
                         log.println("Игрок ввел: " + normalizeWord);
+                        log.flush();
+
                         String result = game.makeGuess(normalizeWord);
 
                         System.out.println(result);
@@ -70,6 +80,8 @@ public class Wordle {
                         if (game.isWin()) {
                             System.out.println("Вы угадали слово!");
                             log.println("Игрок выиграл! Слово: " + normalizeWord);
+                            log.flush();
+
                             break;
                         }
 
@@ -80,11 +92,15 @@ public class Wordle {
                         System.out.println(e.getMessage());
                         System.out.println("Попытка хода после завершения игры");
                         log.println("GameOverException: " + e.getMessage());
+                        log.flush();
+
                         break;
                     } catch (WordNotFoundInDictionary e) {
                         System.out.println(e.getMessage());
                         System.out.println("Попробуйте другое слово");
                         log.println("Слова нет в словаре: " + normalizeWord);
+                        log.flush();
+
                     }
                 }
 
@@ -93,14 +109,20 @@ public class Wordle {
                     System.out.println("Вы выиграли!");
                     System.out.println("Слово угадано с " + (6 - game.getSteps()) + " попыток");
                     log.println("Результат: победа");
+                    log.flush();
+
                 } else {
                     System.out.println("Вы проиграли");
                     log.println("Результат: поражение");
+                    log.flush();
+
                 }
 
                 if (game != null) {
                     System.out.println("Загаданное слово: " + game.getSecretWord());
-                    log.println("Загаданное слово: " + game.getSecretWord());
+//                    log.println("Загаданное слово: " + game.getSecretWord());
+//                    log.flush();
+
                 }
 
             } catch (Exception e) {

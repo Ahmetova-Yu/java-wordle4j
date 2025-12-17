@@ -4,10 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -187,13 +184,19 @@ class WordleTest {
     @Test
     void testLoadDictionaryEmptyFile() throws IOException {
         File tempFile = tempDir.resolve("empty.txt").toFile();
-        tempFile.createNewFile(); // Создаем пустой файл
+        tempFile.createNewFile();
 
         StringWriter logWriter = new StringWriter();
         PrintWriter log = new PrintWriter(logWriter);
 
         WordleDictionaryLoader loader = new WordleDictionaryLoader(tempFile.getAbsolutePath(), log);
 
-        assertThrows(IOException.class, loader::loadDictionary);
+        EmptyDictionaryException exception = assertThrows(
+                EmptyDictionaryException.class,
+                loader::loadDictionary
+        );
+
+        assertTrue(exception.getMessage().contains("Словарь пуст"));
+        assertTrue(exception.getMessage().contains("empty.txt"));
     }
 }
