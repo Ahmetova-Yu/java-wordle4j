@@ -155,7 +155,7 @@ class WordleTest {
     Path tempDir;
 
     @Test
-    void testLoadDictionaryFromValidFile() throws IOException {
+    void testLoadDictionaryFromValidFile() throws IOException, EmptyDictionaryException {
         File tempFile = tempDir.resolve("test_words.txt").toFile();
         try (PrintWriter writer = new PrintWriter(tempFile, StandardCharsets.UTF_8)) {
             writer.println("слово");

@@ -18,6 +18,7 @@ public class WordleGame {
     private Map<Character, LetterInfo> letterInfo = new HashMap<>();
     private List<String> possibleWordsCache;
     private boolean cacheValid = false;
+    private final Random random = new Random();
 
     public WordleGame(WordleDictionary dictionary, PrintWriter logFile) {
         this.dictionary = dictionary;
@@ -62,7 +63,6 @@ public class WordleGame {
 
     private String compareWords(String playerWord) {
         if (playerWord.equals(secretWord)) {
-//            isWin = true;
             return "+++++";
         }
 
@@ -132,15 +132,6 @@ public class WordleGame {
         return secretWord;
     }
 
-//    public void logGameEnd() {
-//        if (isWin) {
-//            logFile.println("Игра окончена. Игрок выиграл!");
-//        } else if (steps == 0) {
-//            logFile.println("Игра окончена. Игрок проиграл.");
-//        }
-//        logFile.flush();
-//    }
-
     public int getSteps() {
         return steps;
     }
@@ -167,11 +158,6 @@ public class WordleGame {
                 case '+':
                     info.correctPositions.add(i);
                     info.minCount = Math.max(info.minCount, greenYellowCount.get(letter));
-                    for (int pos = 0; pos < 5; pos++) {
-                        if (pos != i) {
-                            info.wrongPositions.add(pos);
-                        }
-                    }
                     break;
 
                 case '^':
@@ -180,7 +166,6 @@ public class WordleGame {
                     break;
 
                 case '-':
-                    // Если эта буква была '+' или '^' в этом же слове
                     if (greenYellowCount.containsKey(letter)) {
                         info.maxCount = Math.min(info.maxCount, greenYellowCount.get(letter));
                     } else {
@@ -196,14 +181,12 @@ public class WordleGame {
             char letter = entry.getKey();
             LetterInfo info = entry.getValue();
 
-            int count = 0;
-            for (int i = 0; i < 5; i++) {
-                if (word.charAt(i) == letter) {
-                    count++;
-                }
-            }
+            int count = countLetter(word, letter);
 
-            if (count < info.minCount || count > info.maxCount) {
+            if (count < info.minCount) {
+                return false;
+            }
+            if (info.maxCount >= 0 && count > info.maxCount) {
                 return false;
             }
 
@@ -224,14 +207,13 @@ public class WordleGame {
     }
 
     private int countLetter(String word, char letter) {
-        int k = 0;
+        int count = 0;
         for (int i = 0; i < word.length(); i++) {
             if (word.charAt(i) == letter) {
-                k++;
+                count++;
             }
         }
-
-        return k;
+        return count;
     }
 
     public String getHint() {
@@ -261,8 +243,7 @@ public class WordleGame {
             return null;
         }
 
-        // Выбираем случайное слово
-        Random random = new Random();
+//        Random random = new Random();
         String hint = possibleWordsCache.get(random.nextInt(possibleWordsCache.size()));
         useHints.add(hint);
 

@@ -8,8 +8,7 @@ import java.util.Date;
 import java.util.Scanner;
 
 public class Wordle {
-    public static void main(String[] args) throws IOException {
-
+    public static void main(String[] args) {
         System.out.println("=== Игра Wordle ===");
         System.out.println("Правила:");
         System.out.println("- Угадайте слово из 5 русских букв");
@@ -20,17 +19,21 @@ public class Wordle {
         System.out.println("- Для подсказки нажмите Enter");
         System.out.println("===================\n");
 
-        try (PrintWriter log = new PrintWriter(new FileWriter("wordle.log", StandardCharsets.UTF_8))) {
+        try (PrintWriter log = new PrintWriter(new FileWriter("wordle.log", StandardCharsets.UTF_8, true))) {
             log.println("Игра началась! " + new Date());
-            Scanner sc = new Scanner(System.in);
+
+            WordleGame game = null;
+            Scanner sc = null;
 
             try {
+                sc = new Scanner(System.in, StandardCharsets.UTF_8);
+
                 log.println("Загрузка словаря");
                 WordleDictionaryLoader loader = new WordleDictionaryLoader(log);
                 WordleDictionary dictionary = loader.loadDictionary();
                 log.println("Словарь загружен. Слов: " + dictionary.getWords().size());
 
-                WordleGame game = new WordleGame(dictionary, log);
+                game = new WordleGame(dictionary, log);
                 log.println("Игра создана. Загаданное слово: " + game.getSecretWord());
 
                 System.out.println("Игра началась!");
@@ -49,13 +52,12 @@ public class Wordle {
                         } else {
                             System.out.println("Нет доступных подсказок");
                         }
-
                         continue;
                     }
 
                     if (!isValid(normalizeWord)) {
                         System.out.println("Слово должно быть из 5 русских букв");
-                        log.println("Некорректный ввод");
+                        log.println("Некорректный ввод: " + word);
                         continue;
                     }
 
@@ -77,42 +79,53 @@ public class Wordle {
                     } catch (GameOverException e) {
                         System.out.println(e.getMessage());
                         System.out.println("Попытка хода после завершения игры");
+                        log.println("GameOverException: " + e.getMessage());
                         break;
-
                     } catch (WordNotFoundInDictionary e) {
                         System.out.println(e.getMessage());
                         System.out.println("Попробуйте другое слово");
                         log.println("Слова нет в словаре: " + normalizeWord);
-
                     }
                 }
 
                 System.out.println("\n====================");
-                if (game.isWin()) {
+                if (game != null && game.isWin()) {
                     System.out.println("Вы выиграли!");
                     System.out.println("Слово угадано с " + (6 - game.getSteps()) + " попыток");
+                    log.println("Результат: победа");
                 } else {
                     System.out.println("Вы проиграли");
+                    log.println("Результат: поражение");
                 }
 
-                System.out.println("Загаданное слово: " + game.getSecretWord());
+                if (game != null) {
+                    System.out.println("Загаданное слово: " + game.getSecretWord());
+                    log.println("Загаданное слово: " + game.getSecretWord());
+                }
 
-//                game.logGameEnd();
-
-                sc.close();
-                log.println("Результат: " + (game.isWin() ? "победа" : "поражение"));
-                log.println("Загаданное слово: " + game.getSecretWord());
+            } catch (Exception e) {
+                log.println("Произошла ошибка : " + e.getMessage());
                 log.flush();
+
+                System.out.println("Произошла внутренняя ошибка. Игра будет завершена.");
+
             } finally {
-                if (sc != null) {
-                    sc.close();
+                try {
+                    if (sc != null) {
+                        sc.close();
+                    }
+                } catch (Exception e) {
+                    log.println("Ошибка при закрытии Scanner: " + e.getMessage());
                 }
-                if (log != null) {
-                    log.close();
-                }
+
+                log.println("Игра завершена: " + new Date());
+                log.println("=====================================\n");
+                log.flush();
             }
+
         } catch (IOException e) {
-            System.out.println("Ошибка создания лог файла " + e.getMessage());
+            System.out.println("Ошибка создания лог файла. Игра не может быть запущена.");
+            System.out.println("Проверьте права на запись в текущей директории.");
         }
 
         System.out.println("Спасибо за игру!");
@@ -129,18 +142,4 @@ public class Wordle {
     private static boolean isValid(String word) {
         return word.length() == 5 && word.matches("[а-я]+");
     }
-
-//    private static void printGameHistory(WordleGame game) {
-//        var playerWords = game.getPlayerWords();
-//        var results = game.getResultsPlay();
-//
-//        if (playerWords.isEmpty()) {
-//            System.out.println("Ходов не было");
-//            return;
-//        }
-//
-//        for (int i = 0; i < playerWords.size(); i++) {
-//            System.out.printf("%d.%s → %s%n", i + 1, playerWords.get(i), results.get(i));
-//        }
-//    }
 }
