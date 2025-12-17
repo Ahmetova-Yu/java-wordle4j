@@ -50,7 +50,7 @@ public class WordleGame {
             throw new WordNotFoundInDictionary("Слово загадано неверно!");
         }
 
-//        steps--;
+        steps--;
         playerWords.add(playerWord);
 
         String pattern = compareWords(playerWord);
@@ -64,8 +64,6 @@ public class WordleGame {
             logFile.println("Игрок выиграл!");
             logFile.flush();
 
-        } else {
-            steps--;
         }
 
         logFile.println("Результат: " + pattern + ". Количество попыток: " + steps);
