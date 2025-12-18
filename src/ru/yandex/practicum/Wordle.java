@@ -127,6 +127,7 @@ public class Wordle {
 
             } catch (Exception e) {
                 log.println("Произошла ошибка : " + e.getMessage());
+                e.printStackTrace(log);
                 log.flush();
 
                 System.out.println("Произошла внутренняя ошибка. Игра будет завершена.");

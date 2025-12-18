@@ -80,39 +80,4 @@ public class WordleDictionaryLoader {
 
         return words;
     }
-
-//    private List<String> readWordsFromFile() throws IOException {
-//        List<String> words = new ArrayList<>();
-//
-//        File file = new File(filename);
-//        if (!file.exists()) {
-//            throw new FileNotFoundException("Файл не найден: " + filename);
-//        }
-//
-//        try (BufferedReader bf = new BufferedReader(
-//                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
-//
-//            String line;
-//            while ((line = bf.readLine()) != null) {
-//                String word = rebuildWord(line);
-//                if (isValid(word)) {
-//                    words.add(word);
-//                }
-//            }
-//        }
-//
-//        return words;
-//    }
-
-//    private String rebuildWord(String word) {
-//        word = word.trim()
-//                .replace("ё", "е")
-//                .toLowerCase();
-//
-//        return word;
-//    }
-//
-//    private boolean isValid(String word) {
-//        return word.length() == 5 && word.matches("[а-я]+");
-//    }
 }
