@@ -72,7 +72,6 @@ public class WordleDictionaryLoader {
                     if (word.length() == 5 && word.matches("[а-я]+")) {
                         words.add(word);
                     } else {
-//                        logFile.println("Пропущено невалидное слово: " + line);
                     }
                 }
             }
