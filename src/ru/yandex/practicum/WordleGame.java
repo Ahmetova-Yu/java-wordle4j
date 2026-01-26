@@ -29,9 +29,6 @@ public class WordleGame {
         this.playerWords = new ArrayList<>();
         this.resultsPlay = new ArrayList<>();
         this.logFile = logFile;
-
-//        logFile.println("Загаданное слово: " + secretWord);
-//        logFile.flush();
     }
 
     public String makeGuess(String playerWord) throws GameOverException, WordNotFoundInDictionary {
@@ -256,7 +253,6 @@ public class WordleGame {
             return null;
         }
 
-//        Random random = new Random();
         String hint = possibleWordsCache.get(random.nextInt(possibleWordsCache.size()));
         useHints.add(hint);
 
