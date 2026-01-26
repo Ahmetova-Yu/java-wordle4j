@@ -71,7 +71,6 @@ public class WordleDictionaryLoader {
                     word = word.toLowerCase().replace('ё', 'е');
                     if (word.length() == 5 && word.matches("[а-я]+")) {
                         words.add(word);
-                    } else {
                     }
                 }
             }
